@@ -5,6 +5,7 @@ export type LocalRecord = {
   date: string;
   time: string;
   analyte: string;
+  loinc_code?: string | null;
   value: number;
   unit: string;
   specimen: string;
@@ -27,6 +28,7 @@ function readFallback(): LocalRecord[] {
 
 function writeFallback(records: LocalRecord[]): void {
   localStorage.setItem(fallbackKey, JSON.stringify(records));
+  if (typeof window !== "undefined") window.dispatchEvent(new Event("labguard-records-changed"));
 }
 
 export function listLocalRecords(): LocalRecord[] {

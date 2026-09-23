@@ -80,6 +80,28 @@ class ReviewItem(BaseModel):
     rule_id: str | None = None
 
 
+class EvidenceChainEntry(BaseModel):
+    rule_id: str
+    rule_version: str
+    source: str
+    source_version: str
+    input_values: dict[str, Any]
+    calculation: str
+    threshold: Any | None = None
+    configuration: dict[str, Any] = Field(default_factory=dict)
+    timestamp: datetime
+    result: str
+
+
+FinalValidationStatus = Literal[
+    "VALIDATION_COMPLETE",
+    "REVIEW_REQUIRED",
+    "INSUFFICIENT_DATA",
+    "CONFIGURATION_REQUIRED",
+    "DATA_ERROR",
+]
+
+
 class ValidationProfile(BaseModel):
     profile_id: str = Field(default_factory=lambda: str(uuid4()))
     created_at: datetime
@@ -96,6 +118,24 @@ class ValidationProfile(BaseModel):
     system_recommendation: str
     professional_decision: ProfessionalDecision
     knowledge_snapshot: KnowledgeSnapshot
+    sample_id: str = "unknown-sample"
+    timestamp: datetime | None = None
+    analyte: str | None = None
+    loinc_code: str | None = None
+    value: Any | None = None
+    unit: str | None = None
+    method: str | None = None
+    instrument: str | None = None
+    data_quality: dict[str, Any] = Field(default_factory=dict)
+    specimen_quality: list[SpecimenQualityEvent] = Field(default_factory=list)
+    qc_status: str = "NOT_EVALUATED"
+    reference_interval: dict[str, Any] | None = None
+    delta_check: list[DeltaEvent] = Field(default_factory=list)
+    interference_assessment: list[SpecimenQualityEvent] = Field(default_factory=list)
+    consistency_assessment: list[ConsistencyEvent] = Field(default_factory=list)
+    triggered_rules: list[str] = Field(default_factory=list)
+    evidence_chain: list[EvidenceChainEntry] = Field(default_factory=list)
+    final_status: FinalValidationStatus = "REVIEW_REQUIRED"
 
     @property
     def has_qc_problem(self) -> bool:

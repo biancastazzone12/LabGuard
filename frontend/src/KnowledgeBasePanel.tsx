@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 type Dataset = { dataset_name: string; source_name: string; source_url: string; version: string; release_date: string | null; license: string; date_accessed: string; local_file: string; status?: string };
 type KnowledgeStatus = { valid: boolean; snapshot: Record<string, string>; datasets: Dataset[]; issues: Array<{ code: string; message: string; dataset_name?: string }> };
 
-const apiBaseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:8001";
 const localManifestFallback: KnowledgeStatus = {
   valid: false,
   snapshot: { loinc_version: "NOT_INSTALLED", unit_dataset_version: "0.1.0", reference_interval_version: "NOT_INSTALLED", qc_rules_version: "NOT_INSTALLED", interference_rules_version: "NOT_INSTALLED", labguard_engine_version: "0.1.0" },
@@ -23,9 +22,11 @@ export function KnowledgeBasePanel() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch(`${apiBaseUrl}/knowledge/status`).then(async (response) => {
+    fetch(`${import.meta.env.BASE_URL}knowledge/manifest.json`).then(async (response) => {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      setStatus(await response.json());
+      const manifest = await response.json();
+      const datasets = manifest.datasets as Dataset[];
+      setStatus({ valid: datasets.every((dataset) => dataset.status === "VALID"), snapshot: { knowledge_base_version: manifest.knowledge_base_version, ...Object.fromEntries(datasets.map((dataset) => [dataset.dataset_name, dataset.version])) }, datasets, issues: datasets.filter((dataset) => dataset.status !== "VALID").map((dataset) => ({ code: `${dataset.dataset_name.toUpperCase()}_DATASET_NOT_AVAILABLE`, message: `${dataset.dataset_name} no está instalado o verificado.`, dataset_name: dataset.dataset_name })) });
     }).catch((reason) => { setStatus(localManifestFallback); setError(`API local no disponible; se muestra el manifiesto local cacheado (${String(reason)}).`); });
   }, []);
 

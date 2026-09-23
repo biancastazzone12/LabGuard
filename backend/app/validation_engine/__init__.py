@@ -1,6 +1,7 @@
 from app.validation_engine.engine import ValidationEngine
 from app.validation_engine.models import (
     AuditTrailEntry,
+    EvidenceChainEntry,
     LaboratoryConfiguration,
     ProfessionalDecision,
     ReviewItem,
@@ -10,6 +11,7 @@ from app.validation_engine.models import (
 
 __all__ = [
     "AuditTrailEntry",
+    "EvidenceChainEntry",
     "LaboratoryConfiguration",
     "ProfessionalDecision",
     "ReviewItem",

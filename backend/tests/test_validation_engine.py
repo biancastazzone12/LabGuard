@@ -106,3 +106,13 @@ def test_validation_endpoint_returns_profile_and_audit_trail() -> None:
     assert payload["system_recommendation"] == "No se produjo ninguna señal de revisión configurada."
     assert [entry["stage"] for entry in payload["audit_trail"]][-2:] == ["VALIDATION_PROFILE", "PROFESSIONAL_REVIEW"]
     assert payload["professional_decision"]["status"] == "not_recorded"
+
+
+def test_same_input_configuration_and_versions_produce_same_profile() -> None:
+    current = result()
+    current.update({"loinc_code": "2345-7", "reference_interval": {"lower": 70, "upper": 110, "unit": "synthetic-unit"}})
+    first = ValidationEngine().evaluate(base_input(result=current))
+    second = ValidationEngine().evaluate(base_input(result=current))
+
+    assert first.model_dump(mode="json") == second.model_dump(mode="json")
+    assert first.final_status == "VALIDATION_COMPLETE"

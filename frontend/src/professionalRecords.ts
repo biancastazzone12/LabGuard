@@ -6,6 +6,7 @@ export type RecordDraft = {
   date: string;
   time: string;
   analyte: string;
+  loinc_code: string;
   value: string;
   unit: string;
   specimen: string;
@@ -25,7 +26,7 @@ export type ValidationIssue = { level: ValidationLevel; code: string; field?: ke
 export type ValidationResult = { level: ValidationLevel; issues: ValidationIssue[]; record?: LocalRecord };
 
 export const emptyDraft: RecordDraft = {
-  patient_id: "", sample_id: "", date: "", time: "", analyte: "", value: "", unit: "", specimen: "", method: "", instrument: "", flag: "",
+  patient_id: "", sample_id: "", date: "", time: "", analyte: "", loinc_code: "", value: "", unit: "", specimen: "", method: "", instrument: "", flag: "",
   previous_value: "", previous_date: "", hemolysis_index: "", icterus_index: "", lipemia_index: "", qc_status: "",
 };
 
@@ -68,7 +69,7 @@ function issue(level: ValidationLevel, code: string, message: string, field?: ke
 
 export function draftFromRecord(record: LocalRecord): RecordDraft {
   return {
-    patient_id: record.patient_id, sample_id: record.sample_id, date: record.date, time: record.time, analyte: record.analyte,
+    patient_id: record.patient_id, sample_id: record.sample_id, date: record.date, time: record.time, analyte: record.analyte, loinc_code: record.loinc_code ?? "",
     value: String(record.value), unit: record.unit, specimen: record.specimen, method: record.method, instrument: record.instrument,
     flag: record.flag, previous_value: record.previous_value == null ? "" : String(record.previous_value), previous_date: record.previous_date ?? "",
     hemolysis_index: record.hemolysis_index == null ? "" : String(record.hemolysis_index), icterus_index: record.icterus_index == null ? "" : String(record.icterus_index),
@@ -99,7 +100,7 @@ export function validateDraft(draft: RecordDraft, existing: LocalRecord[], editi
   if (errors.length) return { level: "ERROR", issues };
   const record: LocalRecord = {
     id: editingId ?? crypto.randomUUID(), patient_id: draft.patient_id.trim(), sample_id: draft.sample_id.trim(), date: draft.date, time: draft.time,
-    analyte: draft.analyte.trim(), value: value as number, unit: draft.unit.trim(), specimen: draft.specimen.trim(), method: draft.method.trim(), instrument: draft.instrument.trim(), flag: draft.flag.trim(),
+    analyte: draft.analyte.trim(), loinc_code: draft.loinc_code.trim() || null, value: value as number, unit: draft.unit.trim(), specimen: draft.specimen.trim(), method: draft.method.trim(), instrument: draft.instrument.trim(), flag: draft.flag.trim(),
     previous_value: previousValue, previous_date: draft.previous_date || null, hemolysis_index: numberValue(draft.hemolysis_index), icterus_index: numberValue(draft.icterus_index), lipemia_index: numberValue(draft.lipemia_index), qc_status: draft.qc_status,
   };
   return { level: warnings.length ? "WARNING" : "VALID", issues, record };
@@ -108,6 +109,6 @@ export function validateDraft(draft: RecordDraft, existing: LocalRecord[], editi
 export function draftFromInput(input: Record<string, unknown>): RecordDraft {
   const value = (field: keyof RecordDraft): string => input[field] == null ? "" : String(input[field]);
   return {
-    patient_id: value("patient_id"), sample_id: value("sample_id"), date: normalizeDate(value("date")), time: value("time"), analyte: value("analyte"), value: value("value"), unit: value("unit"), specimen: value("specimen"), method: value("method"), instrument: value("instrument"), flag: value("flag"), previous_value: value("previous_value"), previous_date: normalizeDate(value("previous_date")), hemolysis_index: value("hemolysis_index"), icterus_index: value("icterus_index"), lipemia_index: value("lipemia_index"), qc_status: normalizeQcStatus(value("qc_status")),
+    patient_id: value("patient_id"), sample_id: value("sample_id"), date: normalizeDate(value("date")), time: value("time"), analyte: value("analyte"), loinc_code: value("loinc_code"), value: value("value"), unit: value("unit"), specimen: value("specimen"), method: value("method"), instrument: value("instrument"), flag: value("flag"), previous_value: value("previous_value"), previous_date: normalizeDate(value("previous_date")), hemolysis_index: value("hemolysis_index"), icterus_index: value("icterus_index"), lipemia_index: value("lipemia_index"), qc_status: normalizeQcStatus(value("qc_status")),
   };
 }

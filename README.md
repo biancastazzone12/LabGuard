@@ -2,7 +2,7 @@
 
 Aplicación local de apoyo a la validación profesional de resultados de laboratorio.
 
-LABGUARD no es un sistema diagnóstico, no sustituye al profesional, no toma decisiones clínicas autónomas y no libera resultados automáticamente. Los datos profesionales se cargan desde CSV o JSON y permanecen localmente en el navegador mediante IndexedDB.
+LABGUARD no es un sistema diagnóstico, no sustituye al profesional, no toma decisiones clínicas autónomas y no libera resultados automáticamente. Los datos profesionales se cargan desde CSV o JSON y permanecen localmente en el navegador mediante `localStorage`.
 
 ## Arquitectura
 
@@ -18,6 +18,36 @@ React/TypeScript + Plotly (futuro)
 Dominio: datos -> reglas -> evidencia/alertas -> recomendación -> decisión profesional
 							|
 SQLAlchemy: SQLite (desarrollo) / PostgreSQL (futuro)
+```
+
+## Uso local-first
+
+LABGUARD puede abrirse como una aplicación estática desde GitHub Pages. No requiere API keys, login, tokens ni un backend público. `PROFESSIONAL MODE` conserva los registros en el navegador, permite ingreso manual o importación CSV/JSON, edición, eliminación, validación local reproducible y exportación de un `Validation Report`. `CLEAR PROFESSIONAL DATA` elimina únicamente los datos profesionales; no modifica la Knowledge Base.
+
+`DEMO MODE` está separado y contiene únicamente ejemplos sintéticos. Nunca se mezclan con los registros profesionales.
+
+La validación local no hace `fetch()` ni envía datos durante una validación. Si no existe conocimiento suficiente, devuelve estados explícitos como `LOINC_MAPPING_REQUIRED`, `REFERENCE_INTERVAL_UNAVAILABLE`, `DELTA_CHECK_NOT_AVAILABLE` o `THRESHOLD_NOT_CONFIGURED`. No declara diagnósticos, normalidad clínica, aprobación regulatoria ni liberación automática de resultados.
+
+## Knowledge Base
+
+El manifiesto estático se empaqueta desde `frontend/public/knowledge/manifest.json` y registra dataset, versión, fuente, licencia, fecha y estado. UCUM está disponible localmente. LOINC, intervalos, QC, interferencias y reglas permanecen `NOT_INSTALLED` mientras no exista una release oficial o configuración profesional verificable. No se inventan códigos, intervalos ni thresholds.
+
+Los datasets oficiales deben incorporarse manualmente, con su licencia, checksum y metadata de release. La aplicación no los consulta en Internet durante la validación. La Knowledge Base no contiene datos de pacientes.
+
+## Validation Report y privacidad
+
+El reporte JSON conserva `SYSTEM ANALYSIS`, cadena de evidencia, versiones de Knowledge Base y `PROFESSIONAL DECISION`, que empieza como `not_recorded` y solo puede ser completada por el profesional. Los datos quedan en `localStorage` del navegador y pueden perderse al limpiar el almacenamiento del sitio; exportar el reporte es responsabilidad del usuario.
+
+## GitHub Pages y CI
+
+El workflow `.github/workflows/ci.yml` ejecuta tests backend, tests frontend, build, validación de artefactos estáticos y despliegue de GitHub Pages. Para un repositorio de proyecto, el build usa `VITE_BASE_PATH=/LabGuard/`; para otro nombre de repositorio debe ajustarse esa variable en el workflow.
+
+Comprobaciones locales:
+
+```bash
+pytest -q
+npm --prefix frontend test -- --run
+npm --prefix frontend run build
 ```
 
 El motor de evaluación es independiente de FastAPI y de la base de datos. Carga reglas YAML/JSON versionadas, recibe un contexto normalizado y devuelve un evento por cada regla, incluso cuando no se activa. Una regla puede producir evidencia y una alerta; una recomendación es una orientación no vinculante; la decisión profesional es siempre una acción humana registrada posteriormente.

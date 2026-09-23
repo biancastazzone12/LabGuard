@@ -195,6 +195,7 @@ def to_validation_input(record: ProfessionalRecord) -> ValidationInput:
             "unit": record.unit,
             "method_code": record.method,
             "instrument_code": record.instrument,
+            "loinc_code": record.loinc_code,
             "timestamp": timestamp.isoformat(),
             "flags": {"flag": record.flag, "qc_status": record.qc_status} if record.flag or record.qc_status else {},
         },

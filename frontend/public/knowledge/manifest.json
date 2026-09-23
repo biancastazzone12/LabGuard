@@ -1,0 +1,12 @@
+{
+  "manifest_version": "1.0.0",
+  "knowledge_base_version": "0.1.0",
+  "datasets": [
+    {"dataset_name": "LOINC", "source_name": "LOINC", "source_url": "https://loinc.org/downloads/", "version": "NOT_INSTALLED", "release_date": null, "license": "LOINC license terms", "date_accessed": "2026-09-23", "local_file": "terminology/loinc.csv", "status": "NOT_INSTALLED"},
+    {"dataset_name": "UCUM", "source_name": "UCUM-compatible local registry", "source_url": "https://unitsofmeasure.org/", "version": "0.1.0", "release_date": "2026-09-23", "license": "UCUM license terms", "date_accessed": "2026-09-23", "local_file": "units/ucum.json", "status": "VALID"},
+    {"dataset_name": "reference_intervals", "source_name": "Local professional configuration", "source_url": "https://github.com/labguard/labguard", "version": "NOT_INSTALLED", "release_date": null, "license": "Project configuration", "date_accessed": "2026-09-23", "local_file": "reference_intervals/intervals.json", "status": "NOT_INSTALLED"},
+    {"dataset_name": "qc", "source_name": "Local professional configuration", "source_url": "https://github.com/labguard/labguard", "version": "NOT_INSTALLED", "release_date": null, "license": "Project configuration", "date_accessed": "2026-09-23", "local_file": "qc/rules.json", "status": "NOT_INSTALLED"},
+    {"dataset_name": "interferences", "source_name": "Local professional configuration", "source_url": "https://github.com/labguard/labguard", "version": "NOT_INSTALLED", "release_date": null, "license": "Project configuration", "date_accessed": "2026-09-23", "local_file": "interferences/configurations.json", "status": "NOT_INSTALLED"},
+    {"dataset_name": "rules", "source_name": "Local professional configuration", "source_url": "https://github.com/labguard/labguard", "version": "NOT_INSTALLED", "release_date": null, "license": "Project configuration", "date_accessed": "2026-09-23", "local_file": "rules/rules.json", "status": "NOT_INSTALLED"}
+  ]
+}
