@@ -6,6 +6,7 @@ import { DataAccountPanel } from "./DataAccountPanel";
 import { AppInfoPanel } from "./AppInfoPanel";
 import { ImportWorkbench } from "./ImportWorkbench";
 import { SmartValidationWorkspace } from "./SmartValidationWorkspace";
+import { ClinicalPatternExplorer } from "./ClinicalPatternExplorer";
 import "./styles.css";
 
 function App() {
@@ -23,6 +24,7 @@ function App() {
           <a href="#registros">REGISTROS</a>
           <a href="#privacidad">PRIVACIDAD</a>
           <a href="#info">INFO</a>
+          <a href="#clinical-pattern-explorer">PATRONES CLÍNICOS</a>
         </nav>
         <div className="sidebar-footer"><span className="status-led" /><span>Almacenamiento local activo</span></div>
       </aside>
@@ -44,7 +46,7 @@ function App() {
 
         <DataAccountPanel />
 
-        <div id="importacion">{mode === "PROFESSIONAL" ? <><ImportWorkbench /><SmartValidationWorkspace /></> : <DemoMode />}</div>
+        <div id="importacion">{mode === "PROFESSIONAL" ? <><ImportWorkbench /><SmartValidationWorkspace /><ClinicalPatternExplorer /></> : <DemoMode />}</div>
 
         <section className="professional-guidance" id="registros">
           <div><span className="note-label">FLUJO DE REVISIÓN</span><strong>Importar</strong><p>Seleccioná un archivo y verificá la vista previa.</p></div>

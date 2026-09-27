@@ -20,7 +20,17 @@ export type LocalRecord = {
   qc_status: string;
 };
 
+export type ProfessionalReview = {
+  reviewer: string;
+  clinicalComment: string;
+  professionalInterpretation: string;
+  decision: string;
+  timestamp: string;
+};
+
 const fallbackKey = "labguard-professional-records";
+const reviewKey = "labguard-professional-reviews";
+const groupKey = "labguard-analyte-groups";
 
 function readFallback(): LocalRecord[] {
   try { return JSON.parse(localStorage.getItem(fallbackKey) ?? "[]") as LocalRecord[]; } catch { return []; }
@@ -52,6 +62,37 @@ export function updateLocalRecord(record: LocalRecord): void {
 
 export function clearLocalRecords(): void {
   writeFallback([]);
+  localStorage.removeItem(reviewKey);
+  localStorage.removeItem(groupKey);
+}
+
+export function getProfessionalReview(key: string): ProfessionalReview | null {
+  try {
+    const reviews = JSON.parse(localStorage.getItem(reviewKey) ?? "{}") as Record<string, ProfessionalReview>;
+    return reviews[key] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveProfessionalReview(key: string, review: ProfessionalReview): void {
+  const reviews = (() => {
+    try { return JSON.parse(localStorage.getItem(reviewKey) ?? "{}") as Record<string, ProfessionalReview>; } catch { return {}; }
+  })();
+  reviews[key] = review;
+  localStorage.setItem(reviewKey, JSON.stringify(reviews));
+  if (typeof window !== "undefined") window.dispatchEvent(new Event("labguard-records-changed"));
+}
+
+export function getAnalyteGroups(): Record<string, string> {
+  try { return JSON.parse(localStorage.getItem(groupKey) ?? "{}") as Record<string, string>; } catch { return {}; }
+}
+
+export function saveAnalyteGroup(analyte: string, group: string): void {
+  const groups = getAnalyteGroups();
+  groups[analyte] = group;
+  localStorage.setItem(groupKey, JSON.stringify(groups));
+  if (typeof window !== "undefined") window.dispatchEvent(new Event("labguard-records-changed"));
 }
 
 export const createRecord = (record: LocalRecord): LocalRecord => {

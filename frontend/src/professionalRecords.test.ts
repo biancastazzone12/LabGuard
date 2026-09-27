@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { clearProfessionalData, createRecord, deleteRecord, getRecordById, getRecords, updateRecord } from "./localData";
+import { clearProfessionalData, createRecord, deleteRecord, getAnalyteGroups, getProfessionalReview, getRecordById, getRecords, saveAnalyteGroup, saveProfessionalReview, updateRecord } from "./localData";
 import { emptyDraft, validateDraft } from "./professionalRecords";
+import { readableStatus } from "./presentation";
 
 const storage = new Map<string, string>();
 Object.defineProperty(globalThis, "localStorage", { value: {
@@ -25,11 +26,27 @@ describe("professional records", () => {
     expect(getRecordById(record.id)?.sample_id).toBe("sample-local-1");
   });
 
-  it("rejects duplicate sample ids and invalid values", () => {
+  it("rejects identical repeated rows and invalid values", () => {
     const first = createRecord(validateDraft(validDraft, []).record!);
-    const duplicate = validateDraft({ ...validDraft, value: "not-number" }, [first]);
+    const duplicate = validateDraft(validDraft, [first]);
     expect(duplicate.level).toBe("ERROR");
-    expect(duplicate.issues.map((item) => item.code)).toEqual(expect.arrayContaining(["DUPLICATE_SAMPLE_ID", "INVALID_NUMERIC_VALUE"]));
+    expect(duplicate.issues.map((item) => item.code)).toContain("DUPLICATE_RESULT");
+    const invalid = validateDraft({ ...validDraft, value: "not-number" }, [first]);
+    expect(invalid.issues.map((item) => item.code)).toContain("INVALID_NUMERIC_VALUE");
+  });
+
+  it("allows multiple different analytes in the same sample", () => {
+    const first = createRecord(validateDraft(validDraft, []).record!);
+    const second = validateDraft({ ...validDraft, analyte: "sodium", value: "140" }, [first]);
+    expect(second.level).toBe("VALID");
+    expect(second.record?.sample_id).toBe(first.sample_id);
+  });
+
+  it("allows a distinct repeat measurement of the same analyte and sample", () => {
+    const first = createRecord(validateDraft(validDraft, []).record!);
+    const repeated = validateDraft({ ...validDraft, value: "5.3", time: "08:45" }, [first]);
+    expect(repeated.level).toBe("VALID");
+    expect(repeated.record?.sample_id).toBe(first.sample_id);
   });
 
   it("does not warn for optional delta and QC context", () => {
@@ -48,6 +65,11 @@ describe("professional records", () => {
     expect(result.record?.qc_status).toBe("accepted");
   });
 
+  it("allows a prior result from the same date when the older record has no separate time field", () => {
+    const result = validateDraft({ ...validDraft, previous_date: validDraft.date }, []);
+    expect(result.level).toBe("VALID");
+  });
+
   it("reports a warning only when QC explicitly requires review", () => {
     const result = validateDraft({ ...validDraft, qc_status: "review_required" }, []);
     expect(result.level).toBe("WARNING");
@@ -64,5 +86,21 @@ describe("professional records", () => {
     createRecord(validateDraft(validDraft, []).record!);
     clearProfessionalData();
     expect(getRecords()).toHaveLength(0);
+  });
+
+  it("persists review and configurable analyte groups, then clears them with professional data", () => {
+    saveProfessionalReview("patient-1:sample-1", { reviewer: "professional", clinicalComment: "", professionalInterpretation: "", decision: "Sin decisión", timestamp: "2026-09-23T10:00:00.000Z" });
+    saveAnalyteGroup("Glucose", "Metabolismo");
+    expect(getProfessionalReview("patient-1:sample-1")?.reviewer).toBe("professional");
+    expect(getAnalyteGroups().Glucose).toBe("Metabolismo");
+    clearProfessionalData();
+    expect(getProfessionalReview("patient-1:sample-1")).toBeNull();
+    expect(getAnalyteGroups()).toEqual({});
+  });
+
+  it("keeps clinical wording explicit and non-diagnostic for structured outputs", () => {
+    expect(readableStatus("VALIDATION_COMPLETE")).toBe("Verificación estructural completa");
+    expect(readableStatus("INSUFFICIENT_DATA")).toContain("datos necesarios");
+    expect(readableStatus("REVIEW_REQUIRED")).toContain("revisión profesional");
   });
 });

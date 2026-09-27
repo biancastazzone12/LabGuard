@@ -26,6 +26,8 @@ LABGUARD puede abrirse como una aplicación estática desde GitHub Pages. No req
 
 `DEMO MODE` está separado y contiene únicamente ejemplos sintéticos. Nunca se mezclan con los registros profesionales.
 
+`CLINICAL PATTERN EXPLORER` utiliza exclusivamente registros profesionales guardados localmente. Permite filtrar por paciente y fechas, asignar grupos configurables, seleccionar analitos, revisar una línea temporal, comparar dos momentos con unidades idénticas y exportar un informe de observaciones. Las diferencias son descriptivas: no se usan umbrales para calificarlas como significativas, no se convierten unidades y no se infiere causalidad. Las revisiones profesionales se guardan localmente y se eliminan con `CLEAR PROFESSIONAL DATA`.
+
 La validación local no hace `fetch()` ni envía datos durante una validación. Si no existe conocimiento suficiente, devuelve estados explícitos como `LOINC_MAPPING_REQUIRED`, `REFERENCE_INTERVAL_UNAVAILABLE`, `DELTA_CHECK_NOT_AVAILABLE` o `THRESHOLD_NOT_CONFIGURED`. No declara diagnósticos, normalidad clínica, aprobación regulatoria ni liberación automática de resultados.
 
 ## Knowledge Base
@@ -41,6 +43,10 @@ El reporte JSON conserva `SYSTEM ANALYSIS`, cadena de evidencia, versiones de Kn
 ## GitHub Pages y CI
 
 El workflow `.github/workflows/ci.yml` ejecuta tests backend, tests frontend, build, validación de artefactos estáticos y despliegue de GitHub Pages. Para un repositorio de proyecto, el build usa `VITE_BASE_PATH=/LabGuard/`; para otro nombre de repositorio debe ajustarse esa variable en el workflow.
+
+### Activar la publicación en GitHub
+
+La primera vez, abrir `Settings > Pages` del repositorio, seleccionar `GitHub Actions` en `Build and deployment > Source` y guardar. Después, ejecutar nuevamente el workflow `LABGUARD CI` desde la pestaña `Actions`. El código y el artefacto ya están preparados; GitHub no permite crear el sitio automáticamente si Pages está desactivado.
 
 Comprobaciones locales:
 

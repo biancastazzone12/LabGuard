@@ -49,7 +49,7 @@ function parseSource(text: string, format: string): Record<string, unknown>[] {
 }
 
 function levelClass(level: ValidationLevel): string { return `validation-${level.toLowerCase()}`; }
-function issueText(issue: ValidationIssue): string { return `${issue.level === "VALID" ? "Correcto" : issue.level === "WARNING" ? "Revisar" : "Error"}: ${issue.message}`; }
+function issueText(issue: ValidationIssue): string { return `${issue.level === "VALID" ? "Formato correcto" : issue.level === "WARNING" ? "Dato para revisar" : "Error de formato"}: ${issue.message}`; }
 
 export function ImportWorkbench() {
   const [records, setRecords] = useState<LocalRecord[]>([]);
@@ -74,7 +74,7 @@ export function ImportWorkbench() {
     event?.preventDefault();
     const result = validation ?? validate();
     if (result.level === "ERROR" || !result.record) { setMessage("No se puede guardar: corregí los errores críticos."); return; }
-    if (result.level === "WARNING" && !window.confirm("La fila contiene warnings. ¿Guardar de todos modos?")) return;
+    if (result.level === "WARNING" && !window.confirm("El registro contiene una marca explícita que requiere revisión. ¿Guardarlo igualmente?")) return;
     if (editingId) updateRecord(result.record); else createRecord(result.record);
     setRecords(getRecords()); setDraft(emptyDraft); setEditingId(undefined); setValidation(null);
     setMessage("Fila guardada localmente.");
@@ -97,7 +97,7 @@ export function ImportWorkbench() {
           if (result.record) accepted.push(result.record);
           return { row: index + 2, validation: result };
         });
-        setPreviewRows(rows); setMessage(`${rows.filter((row) => row.validation.level === "VALID").length} válidas, ${rows.filter((row) => row.validation.level === "WARNING").length} con warnings, ${rows.filter((row) => row.validation.level === "ERROR").length} con errores.`);
+        setPreviewRows(rows); setMessage(`${rows.filter((row) => row.validation.level === "VALID").length} sin errores de formato, ${rows.filter((row) => row.validation.level === "WARNING").length} con marcas para revisar, ${rows.filter((row) => row.validation.level === "ERROR").length} con errores de formato. Esto no representa una validación clínica.`);
       } catch (error) { setPreviewRows([{ row: 1, validation: { level: "ERROR", issues: [{ level: "ERROR", code: "INVALID_STRUCTURE", message: String(error) }] } }]); }
     };
     reader.onerror = () => setMessage("No se pudo leer el archivo.");
@@ -106,11 +106,11 @@ export function ImportWorkbench() {
 
   const saveValidImports = () => {
     const validRows = previewRows.filter((row) => row.validation.record && row.validation.level !== "ERROR");
-    if (!validRows.length) { setMessage("No hay filas válidas para guardar."); return; }
+    if (!validRows.length) { setMessage("No hay filas sin errores de formato para guardar."); return; }
     const warningCount = validRows.filter((row) => row.validation.level === "WARNING").length;
-    if (warningCount && !window.confirm(`${warningCount} fila(s) tienen warnings. ¿Guardar las filas válidas?`)) return;
+    if (warningCount && !window.confirm(`${warningCount} fila(s) contienen marcas para revisar. ¿Guardar las filas sin errores de formato?`)) return;
     validRows.forEach((row) => createRecord(row.validation.record!));
-    setRecords(getRecords()); setPreviewRows([]); setMessage(`${validRows.length} fila(s) guardada(s) localmente.`);
+    setRecords(getRecords()); setPreviewRows([]); setMessage(`${validRows.length} fila(s) guardada(s) localmente. La estructura fue aceptada; esto no implica una validación clínica.`);
   };
 
   const validateStored = (record: LocalRecord) => {
@@ -138,9 +138,9 @@ export function ImportWorkbench() {
     <section className="professional-form" aria-labelledby="new-result-title">
       <div className="form-heading"><h3 id="new-result-title">{editingId ? "Editar resultado" : "Nuevo resultado"}</h3><button type="button" onClick={() => { setDraft(emptyDraft); setEditingId(undefined); setValidation(null); }}>Limpiar formulario</button></div>
       <form onSubmit={saveDraft}><div className="form-grid">{fields.map((field) => <label key={field.name}>{field.label}{field.required && <b> *</b>}<input name={field.name} type={field.type ?? "text"} value={draft[field.name]} onChange={(event) => updateDraft(field.name, event.target.value)} /></label>)}<label>Estado de control de calidad<select value={draft.qc_status} onChange={(event) => updateDraft("qc_status", event.target.value)}><option value="">Sin informar</option><option value="not_run">No realizado</option><option value="accepted">Aceptado</option><option value="rejected">Rechazado</option><option value="review_required">Requiere revisión</option></select></label></div><div className="form-actions"><button type="button" onClick={validate}>Validar fila</button><button type="submit" disabled={validation?.level === "ERROR" || !validation?.record}>Guardar fila</button></div></form>
-      {validation && <div className={`validation-summary ${levelClass(validation.level)}`}><strong>{validation.level}</strong>{validation.issues.length ? validation.issues.map((item) => <span key={`${item.code}-${item.field}`}>{issueText(item)}</span>) : <span>Fila lista para guardar.</span>}</div>}
+      {validation && <div className={`validation-summary ${levelClass(validation.level)}`}><strong>{validation.level === "VALID" ? "Sin errores de formato" : validation.level === "WARNING" ? "Hay una marca para revisar" : "Hay errores de formato"}</strong>{validation.issues.length ? validation.issues.map((item) => <span key={`${item.code}-${item.field}`}>{issueText(item)}</span>) : <span>La estructura permite guardar el registro. Esto no es una validación clínica.</span>}</div>}
     </section>
-    <section className="import-section"><div className="form-heading"><h3>Importar CSV o JSON</h3><label className="file-button">Seleccionar archivo<input type="file" accept=".csv,.json,text/csv,application/json" onChange={readFile} /></label></div>{previewRows.length > 0 && <><div className="import-counts"><span>{previewRows.filter((row) => row.validation.level === "VALID").length} válidas</span><span>{previewRows.filter((row) => row.validation.level === "WARNING").length} warnings</span><span>{previewRows.filter((row) => row.validation.level === "ERROR").length} errores</span></div><div className="import-preview">{previewRows.map((row) => <div className={`preview-row ${levelClass(row.validation.level)}`} key={row.row}><span>Fila {row.row}</span><b>{row.validation.level}</b><small>{row.validation.issues.map(issueText).join(" · ") || "Lista para guardar"}</small></div>)}</div><button type="button" onClick={saveValidImports}>Guardar filas válidas</button></>}</section>
+    <section className="import-section"><div className="form-heading"><h3>Importar CSV o JSON</h3><label className="file-button">Seleccionar archivo<input type="file" accept=".csv,.json,text/csv,application/json" onChange={readFile} /></label></div>{previewRows.length > 0 && <><div className="import-counts"><span>{previewRows.filter((row) => row.validation.level === "VALID").length} sin errores de formato</span><span>{previewRows.filter((row) => row.validation.level === "WARNING").length} con marcas para revisar</span><span>{previewRows.filter((row) => row.validation.level === "ERROR").length} con errores de formato</span></div><div className="import-preview">{previewRows.map((row) => <div className={`preview-row ${levelClass(row.validation.level)}`} key={row.row}><span>Fila {row.row}</span><b>{row.validation.level === "VALID" ? "Formato correcto" : row.validation.level === "WARNING" ? "Revisar" : "Error de formato"}</b><small>{row.validation.issues.map(issueText).join(" · ") || "Estructura lista para guardar; aún no implica validación clínica."}</small></div>)}</div><button type="button" onClick={saveValidImports}>Guardar filas sin errores de formato</button></>}</section>
     <section className="records-section"><div className="form-heading"><h3>Registros almacenados ({records.length})</h3><div><button type="button" onClick={() => exportRecords("csv")} disabled={!records.length}>Exportar CSV</button><button type="button" onClick={() => exportRecords("json")} disabled={!records.length}>Exportar JSON</button><button type="button" onClick={clearAll} disabled={!records.length}>Borrar datos profesionales</button></div></div><div className="table-scroll"><table><thead><tr>{["Muestra", "Paciente", "Fecha", "Analito", "Valor", "Unidad", "Muestra biológica", "Método", "Instrumento", "Control de calidad", "Marca", "Acciones"].map((header) => <th key={header}>{header}</th>)}</tr></thead><tbody>{records.map((record) => <tr key={record.id}><td>{record.sample_id}</td><td>{record.patient_id}</td><td>{record.date}</td><td>{record.analyte}</td><td>{record.value}</td><td>{record.unit}</td><td>{record.specimen}</td><td>{record.method}</td><td>{record.instrument}</td><td>{record.qc_status || "Sin informar"}</td><td>{record.flag || "Sin marca"}</td><td className="row-actions"><button type="button" onClick={() => startEdit(record)}>Editar</button><button type="button" onClick={() => validateStored(record)}>Validar</button><button type="button" onClick={() => exportReport(record)}>Informe</button><button type="button" onClick={() => remove(record)}>Eliminar</button>{engineResults[record.id] && <small>{engineResults[record.id].profile.final_status} · {engineResults[record.id].profile.data_quality.issues.length} señales</small>}</td></tr>)}</tbody></table>{!records.length && <p className="empty-state">No hay datos profesionales almacenados.</p>}</div></section>
     {Object.entries(engineResults).map(([recordId, result]) => <section className="validation-summary" key={recordId}><strong>ANÁLISIS DEL SISTEMA · {result.profile.final_status === "INSUFFICIENT_DATA" ? "Faltan datos" : result.profile.final_status === "REVIEW_REQUIRED" ? "Requiere revisión" : "Análisis completo"}</strong><span>Evidencia: {result.profile.evidence_chain.length} elemento(s) · Base de conocimiento: {result.profile.knowledge_base_versions.knowledge_base_version}</span><span>DECISIÓN PROFESIONAL: sin registrar</span></section>)}
     {message && <p className="privacy-note" role="status">{message}</p>}

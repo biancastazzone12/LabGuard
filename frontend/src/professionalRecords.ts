@@ -82,7 +82,7 @@ export function validateDraft(draft: RecordDraft, existing: LocalRecord[], editi
   draft = normalizedDraft;
   const issues: ValidationIssue[] = [];
   requiredFields.forEach((field) => { if (!draft[field].trim()) issues.push(issue("ERROR", "REQUIRED_FIELD_MISSING", `${field} es obligatorio.`, field)); });
-  if (draft.sample_id.trim() && existing.some((record) => record.sample_id === draft.sample_id.trim() && record.id !== editingId)) issues.push(issue("ERROR", "DUPLICATE_SAMPLE_ID", "sample_id ya existe.", "sample_id"));
+  if (draft.patient_id.trim() && draft.sample_id.trim() && draft.analyte.trim() && Number.isFinite(numberValue(draft.value)) && existing.some((record) => record.patient_id === draft.patient_id.trim() && record.sample_id === draft.sample_id.trim() && record.date === draft.date && record.time === draft.time && record.analyte.toLocaleLowerCase() === draft.analyte.trim().toLocaleLowerCase() && record.value === numberValue(draft.value) && record.unit.trim().toLocaleLowerCase() === draft.unit.trim().toLocaleLowerCase() && record.specimen === draft.specimen.trim() && record.method === draft.method.trim() && record.instrument === draft.instrument.trim() && record.id !== editingId)) issues.push(issue("ERROR", "DUPLICATE_RESULT", "Esta fila repite exactamente los datos de un resultado ya guardado.", "analyte"));
   if (draft.date && !validDate(draft.date)) issues.push(issue("ERROR", "INVALID_DATE", "date no es válida. Use AAAA-MM-DD.", "date"));
   if (draft.time && !validTime(draft.time)) issues.push(issue("ERROR", "INVALID_TIME", "time no es válida. Use HH:MM o HH:MM:SS.", "time"));
   const value = numberValue(draft.value);
@@ -94,7 +94,7 @@ export function validateDraft(draft: RecordDraft, existing: LocalRecord[], editi
   if (draft.previous_date && !validDate(draft.previous_date)) issues.push(issue("ERROR", "INVALID_DATE", "previous_date no es válida.", "previous_date"));
   const previousValue = numberValue(draft.previous_value);
   if ((draft.previous_date && previousValue == null) || (!draft.previous_date && previousValue != null)) issues.push(issue("ERROR", "INCOMPLETE_PREVIOUS_RESULT", "previous_value y previous_date deben informarse juntos."));
-  if (draft.previous_date && draft.date && validDate(draft.previous_date) && validDate(draft.date) && draft.previous_date >= draft.date) issues.push(issue("ERROR", "INVALID_PREVIOUS_DATE", "previous_date debe ser anterior a date.", "previous_date"));
+  if (draft.previous_date && draft.date && validDate(draft.previous_date) && validDate(draft.date) && draft.previous_date > draft.date) issues.push(issue("ERROR", "INVALID_PREVIOUS_DATE", "previous_date no puede ser posterior a date.", "previous_date"));
   const errors = issues.filter((item) => item.level === "ERROR");
   const warnings = issues.filter((item) => item.level === "WARNING");
   if (errors.length) return { level: "ERROR", issues };
